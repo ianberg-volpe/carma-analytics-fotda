@@ -90,8 +90,8 @@ def get_external_object_timestamp(bag, test_num, test_trials):
             day = msg.path_history.initial_position.utc_time.day.day
             hour = msg.path_history.initial_position.utc_time.hour.hour
             minute = msg.path_history.initial_position.utc_time.minute.minute
-            second = round(msg.path_history.initial_position.utc_time.second.millisecond / 60999)
-            microsecond = (msg.path_history.initial_position.utc_time.second.millisecond - second) * 1000
+            second = int(msg.path_history.initial_position.utc_time.second.millisecond / 1000)
+            microsecond = (msg.path_history.initial_position.utc_time.second.millisecond - (second * 1000)) * 1000
             encoded_time = datetime.datetime(year, month, day, hour, minute, second, microsecond)
 
             # Create object for psm
