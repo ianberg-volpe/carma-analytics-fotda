@@ -125,26 +125,19 @@ def get_external_object_timestamp(bag, test_num, test_trials):
                     
 
                         
-        
+
         for psm in psm_objects:
             # Find external object prediction closest to psm
             psm_date_time = format_timestamp_nanos(psm.t.to_nsec())
             found_match = False
             for obj in external_object_predictions:
                 if obj.id == psm.id:
-                    if abs(obj.velocity - psm.velocity) < 0.0000000001:
-                        
-                        # if (psm.encoded_timestamp -  obj.encoded_timestamp).total_seconds() * 1000 < datetime.datetime(0,0,0,0,0,0,20).total_seconds * 1000:
-                        if abs(psm.encoded_timestamp.timestamp() * 1000 - obj.encoded_timestamp.timestamp() * 1000) < (240 + 1*1.67e-5)* 60000:
-                            # Additional check to see if psm_message is behind external_object timestamp
-                            if (obj.t.to_nsec() - psm.t.to_nsec()):
-                        # diff = (psm.encoded_timestamp - obj.encoded_timestamp)
-                                obj_date_time = format_timestamp_nanos(obj.t.to_nsec())
-                                # "Test Case", "Trial", "Msg ID", "Incoming psm timestamp", "Encoded timestamp", "Speed", "External Object timestamp"]
-                                csv_results_writer.writerow([test_num, trial_num, psm.id, psm_date_time, psm.encoded_timestamp, psm.velocity, obj_date_time, obj.encoded_timestamp])
-                                found_match = True
-                                break
-                
+                    if psm.encoded_timestamp == obj.encoded_timestamp:
+                        obj_date_time = datetime.datetime.fromtimestamp(obj.t.to_sec())
+                        csv_results_writer.writerow([24, 24, psm.id, psm_date_time, psm.encoded_timestamp, psm.velocity, obj_date_time, obj.encoded_timestamp])
+                        found_match = True
+                        break
+            
             if found_match is False:
                 csv_results_writer.writerow([test_num, trial_num, psm.id, psm_date_time, psm.encoded_timestamp, psm.velocity, "", ""]) 
    
