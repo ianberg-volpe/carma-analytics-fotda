@@ -65,7 +65,7 @@ def get_external_object_timestamp(bag, test_num, test_trials):
 
     # Define csv
     csv_results_filename = "Result_timestamps_Test" + str(test_num) + ".csv"
-    csv_results_writer = csv.writer(open(csv_results_filename,'w'))
+    csv_results_writer = csv.writer(open(csv_results_filename,'w', newline=''))
     csv_results_writer.writerow(["Test Case", "Trial", "Msg ID", "Incoming psm timestamp", "Encoded timestamp", "Speed", "External Object timestamp", "ext_obj_encoded_timestamp"])
     
     
