@@ -156,10 +156,10 @@ def main():
 
     bag_files = []
     # List rosbag file names
-    bag_files.append("2022-05-24-Test-1-4.bag")
-    bag_files.append("2022-05-24-Test-5-2-8.bag")
-    bag_files.append("2022-05-23-Test-3-6-9.bag")
-    bag_files.append("2022-05-26-Test-7.bag")
+    bag_files.append("_2022-06-21-Test_1.1_1.2_1.3_1.4.bag")
+    bag_files.append("_2022-06-21-Test_1.5_to_1.8.bag")
+    bag_files.append("_2022-06-21-Test4.1_4.2.bag")
+    bag_files.append("_2022-06-21-Test2.1_2.2_3.1.bag")
 
     for bag_filename in bag_files:
 
@@ -169,24 +169,23 @@ def main():
 
         try:
             print("Starting to process bag at " + str(datetime.datetime.now()))
+            # For each bag file get the name of the tests within it
+            yy_mm_dd = bag_filename[0:(bag_filename.find('Test') - 1)]
+            sys.stdout = orig_stdout
+            start = bag_filename.find('Test') + 5
+            end = bag_filename.find('.bag', start)
+            tests_string = bag_filename[start:end]
+            
+            tests_in_bag = re.findall(r'\d+', tests_string)
+
+            for test in tests_in_bag:
+                test_duration = get_test_duration(int(test),yy_mm_dd)
+                get_external_object_timestamp(rosbag.Bag(bag_filename), int(test), test_duration)
+                
+            
+            print(tests_in_bag)
         except:
             print("Skipping" + bag_filename + ", unable to open or process bag file")
-        
-        # For each bag file get the name of the tests within it
-        yy_mm_dd = bag_filename[0:(bag_filename.find('Test') - 1)]
-        sys.stdout = orig_stdout
-        start = bag_filename.find('Test') + 5
-        end = bag_filename.find('.bag', start)
-        tests_string = bag_filename[start:end]
-        
-        tests_in_bag = re.findall(r'\d+', tests_string)
-
-        for test in tests_in_bag:
-            test_duration = get_test_duration(int(test),yy_mm_dd)
-            get_external_object_timestamp(rosbag.Bag(bag_filename), int(test), test_duration)
-            
-        
-        print(tests_in_bag)
     
 
 
