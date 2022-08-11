@@ -8,6 +8,7 @@ import datetime
 import math
 import os
 import re
+import pandas as pd
 
 # Usage:
 # python3.7 get_incoming_psm_rosbag_data in folder containing rosbags and csv of Test data
@@ -154,6 +155,10 @@ def main():
     # text_log_file_writer = open(text_log_filename, 'w')
     # sys.stdout = text_log_file_writer
 
+    log_df = pd.read_csv("CP_log_all_UTC_2022-06-21.csv")
+    log_df["start_ts"] = (log_df["date"] + " " + log_df["start"]).apply(lambda x: datetime.datetime.strptime(x, format).timestamp())
+    log_df["end_ts"] = (log_df["date"] + " " + log_df["end"]).apply(lambda x: datetime.datetime.strptime(x, format).timestamp())
+
     bag_files = []
     # List rosbag file names
     bag_files.append("_2022-06-21-Test_1.1_1.2_1.3_1.4.bag")
@@ -170,17 +175,18 @@ def main():
         try:
             print("Starting to process bag at " + str(datetime.datetime.now()))
             # For each bag file get the name of the tests within it
-            yy_mm_dd = bag_filename[0:(bag_filename.find('Test') - 1)]
-            sys.stdout = orig_stdout
-            start = bag_filename.find('Test') + 5
-            end = bag_filename.find('.bag', start)
-            tests_string = bag_filename[start:end]
+            # yy_mm_dd = bag_filename[0:(bag_filename.find('Test') - 1)]
+            # sys.stdout = orig_stdout
+            # start = bag_filename.find('Test') + 5
+            # end = bag_filename.find('.bag', start)
+            # tests_string = bag_filename[start:end]
             
-            tests_in_bag = re.findall(r'\d+', tests_string)
+            # tests_in_bag = re.findall(r'\d+', tests_string)
+            tests_in_bag = list(log_df[log_df["rosbag"] == bag_filename].test.unique())
 
             for test in tests_in_bag:
-                test_duration = get_test_duration(int(test),yy_mm_dd)
-                get_external_object_timestamp(rosbag.Bag(bag_filename), int(test), test_duration)
+                test_duration = log_df[log_df["test"] == test][["run","start_ts","end_ts"]].to_numpy().tolist()
+                get_external_object_timestamp(rosbag.Bag(bag_filename), test, test_duration)
                 
             
             print(tests_in_bag)
