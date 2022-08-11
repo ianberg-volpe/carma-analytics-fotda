@@ -112,11 +112,11 @@ def get_external_object_timestamp(bag, test_num, test_trials):
                         if object_id in unique_psm_ids:
                             curr_trial_psm_timestamps.append(t)
                             # Convert t to datetime
-                            date_time = format_timestamp_nanos(t.to_nsec())
+                            date_time = date_time = datetime.datetime.fromtimestamp(t.to_sec())
                             ######
                             object_speed = obj.velocity.twist.linear.x
                             header_timestamp = rospy.Time(obj.header.stamp.secs, obj.header.stamp.nsecs)
-                            header_datetime = format_timestamp_nanos(header_timestamp.to_nsec())
+                            header_datetime = datetime.datetime.fromtimestamp(header_timestamp.to_sec())
                             
                             
                             external_object_prediction = Object(object_id, object_speed, t, header_datetime)
@@ -128,7 +128,7 @@ def get_external_object_timestamp(bag, test_num, test_trials):
 
         for psm in psm_objects:
             # Find external object prediction closest to psm
-            psm_date_time = format_timestamp_nanos(psm.t.to_nsec())
+            psm_date_time = datetime.datetime.fromtimestamp(psm.t.to_sec())
             found_match = False
             for obj in external_object_predictions:
                 if obj.id == psm.id:
