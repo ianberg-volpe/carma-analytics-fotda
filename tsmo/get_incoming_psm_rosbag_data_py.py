@@ -71,12 +71,12 @@ def get_external_object_timestamp(bag, test_num, test_trials):
     
     
     
-    trial_num = 1
+    #trial_num = 1
     for trial in test_trials:
+        trial_num = trial[0]
         unique_psm_ids = []
         psm_objects = []
-        for topic, msg, t in bag.read_messages(topics = ["/message/incoming_psm"], start_time = rospy.Time(trial[0], 0), end_time = rospy.Time(trial[1],0)):
-            
+        for topic, msg, t in bag.read_messages(topics = ["/message/incoming_psm"], start_time = rospy.Time(trial[1], 0), end_time = rospy.Time(trial[2],0)):
             # Convert psm id to int
             psm_id = int.from_bytes(msg.id.id, byteorder='big', signed=False)
             if not psm_id in unique_psm_ids:
@@ -99,12 +99,13 @@ def get_external_object_timestamp(bag, test_num, test_trials):
             psm_object = Object (psm_id, velocity, t, encoded_time)
             psm_objects.append(psm_object)
 
-
     # Once we have the unique psm ids, get the associated timestamps from external_object_predictions
     
         curr_trial_psm_timestamps = []
         external_object_predictions = []
-        for topic, msg, t in bag.read_messages(topics = ["/environment/external_object_predictions"], start_time = rospy.Time(trial[0], 0), end_time = rospy.Time(trial[1],0)):
+        UTC_DIFF_HRS = -4
+
+        for topic, msg, t in bag.read_messages(topics = ["/environment/external_object_predictions"], start_time = rospy.Time(trial[1], 0), end_time = rospy.Time(trial[2],0)):
             
             if msg.objects: # If objects exist
                 for obj in msg.objects:
@@ -116,11 +117,14 @@ def get_external_object_timestamp(bag, test_num, test_trials):
                             date_time = date_time = datetime.datetime.fromtimestamp(t.to_sec())
                             ######
                             object_speed = obj.velocity.twist.linear.x
+                            
                             header_timestamp = rospy.Time(obj.header.stamp.secs, obj.header.stamp.nsecs)
                             header_datetime = datetime.datetime.fromtimestamp(header_timestamp.to_sec())
+                             # header timestamp is in local time; converting to UTC
+                            utc_delta = datetime.timedelta(hours = UTC_DIFF_HRS)
+                            header_datetime_utc = header_datetime - utc_delta
                             
-                            
-                            external_object_prediction = Object(object_id, object_speed, t, header_datetime)
+                            external_object_prediction = Object(object_id, object_speed, t, header_datetime_utc)
                             external_object_predictions.append(external_object_prediction)
                             # csv_results_writer.writerow([test_num, trial_num, object_id, date_time, header_datetime, object_speed])
                     
@@ -135,7 +139,7 @@ def get_external_object_timestamp(bag, test_num, test_trials):
                 if obj.id == psm.id:
                     if psm.encoded_timestamp == obj.encoded_timestamp:
                         obj_date_time = datetime.datetime.fromtimestamp(obj.t.to_sec())
-                        csv_results_writer.writerow([24, 24, psm.id, psm_date_time, psm.encoded_timestamp, psm.velocity, obj_date_time, obj.encoded_timestamp])
+                        csv_results_writer.writerow([test_num, trial_num, psm.id, psm_date_time, psm.encoded_timestamp, psm.velocity, obj_date_time, obj.encoded_timestamp])
                         found_match = True
                         break
             
@@ -143,7 +147,6 @@ def get_external_object_timestamp(bag, test_num, test_trials):
                 csv_results_writer.writerow([test_num, trial_num, psm.id, psm_date_time, psm.encoded_timestamp, psm.velocity, "", ""]) 
    
                 
-        trial_num += 1
         csv_results_writer.writerow(["","","",""])
 
 
@@ -155,16 +158,17 @@ def main():
     # text_log_file_writer = open(text_log_filename, 'w')
     # sys.stdout = text_log_file_writer
 
-    log_df = pd.read_csv("CP_log_all_UTC_2022-06-21.csv")
+    log_df = pd.read_csv("CP_log_all_2022-06-21.csv")
+    format = "%Y-%m-%d %H:%M:%S.%f"
     log_df["start_ts"] = (log_df["date"] + " " + log_df["start"]).apply(lambda x: datetime.datetime.strptime(x, format).timestamp())
     log_df["end_ts"] = (log_df["date"] + " " + log_df["end"]).apply(lambda x: datetime.datetime.strptime(x, format).timestamp())
 
     bag_files = []
     # List rosbag file names
-    bag_files.append("_2022-06-21-Test_1.1_1.2_1.3_1.4.bag")
-    bag_files.append("_2022-06-21-Test_1.5_to_1.8.bag")
-    bag_files.append("_2022-06-21-Test4.1_4.2.bag")
-    bag_files.append("_2022-06-21-Test2.1_2.2_3.1.bag")
+    bag_files.append("_2022-06-21_Test_1.1_to_1.4_downselected.bag")
+    bag_files.append("Test_1.5_to_1.8_downsel.bag")
+    bag_files.append("Test_2.1_to_3.1_downsel.bag")
+    bag_files.append("Test_4.1_to_4.2_downsel.bag")
 
     for bag_filename in bag_files:
 
@@ -190,9 +194,9 @@ def main():
                 
             
             print(tests_in_bag)
-        except:
+        except Exception as e:
             print("Skipping" + bag_filename + ", unable to open or process bag file")
-    
+            print(repr(e))
 
 
     sys.stdout = orig_stdout
